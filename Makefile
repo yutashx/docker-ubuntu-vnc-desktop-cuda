@@ -1,7 +1,7 @@
 .PHONY: build run
 
 # Default values for variables
-REPO  ?= dorowu/ubuntu-desktop-lxde-vnc
+REPO  ?= $${USER}_ubuntu_desktop_vnc
 TAG   ?= latest
 # you can choose other base image versions
 IMAGE ?= ubuntu:20.04
@@ -12,7 +12,7 @@ FLAVOR ?= lxde
 ARCH ?= amd64
 
 # These files will be generated from teh Jinja templates (.j2 sources)
-templates = Dockerfile rootfs/etc/supervisor/conf.d/supervisord.conf
+templates = rootfs/etc/supervisor/conf.d/supervisord.conf
 
 # Rebuild the container image
 build: $(templates)
