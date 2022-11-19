@@ -10,30 +10,43 @@ IMAGE ?= ubuntu:20.04
 FLAVOR ?= lxde
 # armhf or amd64
 ARCH ?= amd64
+PASSWORD ?= password
+PWD=$(shell pwd)
 
 # These files will be generated from teh Jinja templates (.j2 sources)
 templates = rootfs/etc/supervisor/conf.d/supervisord.conf
 
 # Rebuild the container image
 build: $(templates)
-	docker build -t $(REPO):$(TAG) .
+	time docker build -t $(REPO):$(TAG) .
 
 # Test run the container
 # the local dir will be mounted under /src read-only
 run:
-	docker run --privileged --rm \
-		-p 6080:80 -p 6081:443 \
-		-v ${PWD}:/src:ro \
-		-e USER=doro -e PASSWORD=mypassword \
-		-e ALSADEV=hw:2,0 \
-		-e SSL_PORT=443 \
-		-e RELATIVE_URL_ROOT=approot \
-		-e OPENBOX_ARGS="--startup /usr/bin/galculator" \
-		-v ${PWD}/ssl:/etc/nginx/ssl \
-		--device /dev/snd \
+	docker run --rm \
+		-p 6080:80 -p 6081:443 -p 10022:10022 \
+		-e USER=${USER} \
+		-e PASSWORD=${PASSWORD} \
+		-e HTTP_PASSWORD=${PASSWORD} \
+		-v /etc/passwd:/etc/passwd:ro \
+		-v /etc/group:/etc/group:ro \
+		-v $(shell pwd):/home/${USER}/tmp \
+		-v $(shell pwd)/workspace:/home/${USER}/workspace\
 		--name ubuntu-desktop-lxde-test \
+		--gpus all \
 		$(REPO):$(TAG)
 
+		#-v ${PWD}:/src:ro \
+		#-e ALSADEV=hw:2,0 
+		#-e SSL_PORT=443 
+		#-e RELATIVE_URL_ROOT=approot 
+		#-e OPENBOX_ARGS="--startup /usr/bin/galculator"
+		#-v ${PWD}/ssl:/etc/nginx/ssl 
+		#--device /dev/snd 
+
+install_deps:
+	time ./install_deps.sh ${USER}
+	
 # Connect inside the running container for debugging
 shell:
 	docker exec -it ubuntu-desktop-lxde-test bash

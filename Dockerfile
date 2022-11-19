@@ -40,9 +40,6 @@ RUN apt update \
     && rm google-chrome-stable_current_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
-
-
-
 RUN apt update \
     && apt install -y --no-install-recommends --allow-unauthenticated \
         lxde gtk2-engines-murrine gnome-themes-standard gtk2-engines-pixbuf gtk2-engines-murrine arc-theme \
@@ -79,6 +76,19 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/* /tmp/a.txt /tmp/b.txt
 
+RUN apt-get update && sudo apt-get upgrade -y \
+    && apt-get install -y build-essential git vim libopenexr-dev libxi-dev \
+			  libglfw3-dev libglew-dev libomp-dev libxinerama-dev libxcursor-dev \
+			  libatlas-base-dev libsuitesparse-dev \
+			  wget bzip2 ca-certificates curl zip \
+			  libopenexr-dev libxi-dev \
+		          libboost-program-options-dev libboost-filesystem-dev \
+                          libboost-graph-dev libboost-system-dev libboost-test-dev libeigen3-dev \
+                          libsuitesparse-dev libfreeimage-dev libmetis-dev \
+			  libgoogle-glog-dev libgflags-dev \
+                          libglew-dev qtbase5-dev libqt5opengl5-dev libcgal-dev
+
+RUN apt-get install -y ssh
 
 ################################################################################
 # builder
@@ -122,9 +132,18 @@ COPY rootfs /
 RUN ln -sf /usr/local/lib/web/frontend/static/websockify /usr/local/lib/web/frontend/static/novnc/utils/websockify && \
 	chmod +x /usr/local/lib/web/frontend/static/websockify/run
 
+RUN mkdir /var/run/sshd
+RUN sed -i 's/#Port 22/Port 10022/' /etc/ssh/sshd_config
+RUN sed -i 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
+RUN sed -i 's/# ForwardX11Trusted (.*)/ForwardX11Trusted yes/g' /etc/ssh/sshd_config
+RUN apt-get install -y python3-pip jq
+RUN ssh-keygen -A
+
 EXPOSE 80
+EXPOSE 10022
 WORKDIR /root
 ENV HOME=/home/ubuntu \
     SHELL=/bin/bash
 HEALTHCHECK --interval=30s --timeout=5s CMD curl --fail http://127.0.0.1:6079/api/health
 ENTRYPOINT ["/startup.sh"]
+CMD ["/usr/sbin/ssh", "-D"]
